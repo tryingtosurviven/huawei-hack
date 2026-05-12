@@ -1,0 +1,114 @@
+/* SafeSignal Alert Card Styles */
+.safesignal-alert {
+  margin-top: 8px;
+  padding: 12px 16px;
+  background: rgba(255, 243, 224, 0.95);
+  border-left: 4px solid #ff9800;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  animation: slideIn 0.3s ease-out;
+  backdrop-filter: blur(10px);
+  max-width: 400px;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.safesignal-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.safesignal-icon {
+  font-size: 18px;
+}
+
+.safesignal-title {
+  font-weight: 600;
+  color: #e65100;
+  flex-grow: 1;
+}
+
+.safesignal-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #999;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.safesignal-close:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.safesignal-message {
+  color: #5d4037;
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+
+.safesignal-confidence {
+  font-size: 11px;
+  color: #795548;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.family-mode-badge {
+  background: #4caf50;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.safesignal-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.safesignal-action-btn {
+  background: white;
+  border: 1px solid #ff9800;
+  color: #e65100;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.safesignal-action-btn:hover {
+  background: #ff9800;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.safesignal-action-btn:active {
+  transform: translateY(0);
+}
