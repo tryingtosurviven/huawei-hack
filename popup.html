@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SafeSignal Settings</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 320px;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .logo {
+      font-size: 48px;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .tagline {
+      font-size: 12px;
+      opacity: 0.9;
+    }
+
+    .stats-container {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .stats-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      opacity: 0.9;
+    }
+
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .stat-item:last-child {
+      border-bottom: none;
+    }
+
+    .stat-label {
+      font-size: 13px;
+    }
+
+    .stat-value {
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    .toggle-container {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .toggle-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .toggle-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .toggle-label {
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 48px;
+      height: 24px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(255, 255, 255, 0.3);
+      transition: 0.3s;
+      border-radius: 24px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: #4caf50;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(24px);
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 11px;
+      opacity: 0.7;
+      margin-top: 16px;
+    }
+
+    .huawei-badge {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">🛡️</div>
+    <h1>SafeSignal</h1>
+    <p class="tagline">AI Harm Pattern Recognition</p>
+  </div>
+
+  <div class="stats-container">
+    <div class="stats-title">📊 Detection Statistics</div>
+    <div class="stat-item">
+      <span class="stat-label">🚨 Grooming</span>
+      <span class="stat-value" id="stat-grooming">0</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">😢 Cyberbullying</span>
+      <span class="stat-value" id="stat-cyberbullying">0</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">🎣 Scams</span>
+      <span class="stat-value" id="stat-scams">0</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">📢 Oversharing</span>
+      <span class="stat-value" id="stat-oversharing">0</span>
+    </div>
+  </div>
+
+  <div class="toggle-container">
+    <div class="toggle-item">
+      <div class="toggle-label">
+        <span>👨‍👩‍👧</span>
+        <span>Family Mode</span>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="familyModeToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+
+  <div class="footer">
+    Powered by Huawei ModelArts + NLP
+    <div class="huawei-badge">🇸🇬 Built for Singapore</div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
