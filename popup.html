@@ -13,36 +13,38 @@
     <p class="tagline">AI Harm Pattern Recognition</p>
   </div>
 
-  <div id="pause-warning" class="glass-panel warning-panel">
-    <div class="section-title">⚠️ Pause Before Replying</div>
-    <p class="warning-text">We detected language that looks like a potential <strong id="harm-category">Scam</strong>. Take a deep breath. You do not have to reply immediately.</p>
-  </div>
-
-  <div id="reply-coach" class="glass-panel">
-    <div class="section-title">💬 Reply Coach</div>
-    <p class="warning-text">Safe ways to respond or disengage:</p>
-    <button class="reply-btn">"I need to verify this information first."</button>
-    <button class="reply-btn">"I'm not comfortable with this. Please stop."</button>
-    <button class="reply-btn">"I am blocking this number."</button>
-  </div>
-
-  <div id="aftercare-checklist" class="glass-panel">
-    <div class="section-title">✅ Aftercare</div>
-    <div class="checklist-item">
-      <input type="checkbox" id="check-screenshot">
-      <label for="check-screenshot">Take a screenshot of the chat</label>
+  <div id="detection-wrapper" class="hidden">
+    <div id="pause-warning" class="glass-panel warning-panel">
+      <div class="section-title">⚠️ Pause Before Replying</div>
+      <p class="warning-text">We detected language that looks like a potential <strong id="harm-category">Threat</strong>. Take a deep breath. You do not have to reply immediately.</p>
     </div>
-    <div class="checklist-item">
-      <input type="checkbox" id="check-block">
-      <label for="check-block">Block and report the sender</label>
-    </div>
-    <div class="checklist-item">
-      <input type="checkbox" id="check-talk">
-      <label for="check-talk">Talk to a trusted friend or adult</label>
-    </div>
-  </div>
 
-  <div class="glass-panel">
+    <div id="reply-coach" class="glass-panel">
+      <div class="section-title">💬 Reply Coach</div>
+      <p class="warning-text">Safe ways to respond or disengage:</p>
+      <div class="reply-options">
+        <button class="reply-btn">"I need to verify this information first."</button>
+        <button class="reply-btn">"I'm not comfortable with this. Please stop."</button>
+        <button class="reply-btn">"I am blocking this number."</button>
+      </div>
+    </div>
+
+    <div id="aftercare-checklist" class="glass-panel">
+      <div class="section-title">✅ Aftercare Checklist</div>
+      <div class="checklist-item">
+        <input type="checkbox" id="check-screenshot">
+        <label for="check-screenshot">Take a screenshot of the chat</label>
+      </div>
+      <div class="checklist-item">
+        <input type="checkbox" id="check-block">
+        <label for="check-block">Block and report the sender</label>
+      </div>
+      <div class="checklist-item">
+        <input type="checkbox" id="check-talk">
+        <label for="check-talk">Talk to a trusted friend or adult</label>
+      </div>
+    </div>
+  </div> <div id="settings-stats-panel" class="glass-panel">
     <div class="section-title">📊 Detection Statistics</div>
     <div class="stat-item">
       <span class="stat-label">🚨 Grooming</span>
@@ -62,7 +64,7 @@
     </div>
   </div>
 
-  <div class="glass-panel">
+  <div id="family-mode-panel" class="glass-panel">
     <div class="toggle-item">
       <div class="toggle-label">
         <span>👨‍👩‍👧</span>

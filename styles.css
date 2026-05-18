@@ -212,3 +212,14 @@ input:checked + .slider:before {
   font-size: 10px;
   margin-top: 8px;
 }
+
+/* Use this to hide sections of the UI by default */
+.hidden {
+  display: none !important;
+}
+
+/* Ensure the wrapper doesn't have any margins when hidden */
+#detection-wrapper {
+  margin: 0;
+  padding: 0;
+}
