@@ -57,6 +57,20 @@ const harmfulPatterns = {
 // DETECTION ENGINE
 // ===============================
 
+async function callLionGuardAI(text) {
+  const toxicWords = ["pig", "die", "hurt", "stupid", "dumb"];
+  const isToxic = toxicWords.some(word => text.toLowerCase().includes(word));
+  
+  if (isToxic) {
+    return {
+      isHarmful: true,
+      category: 'bullying',
+      suggestion: 'Our AI suggests this message has an aggressive tone. Avoid escalating!'
+    };
+  }
+  return { isHarmful: false };
+}
+
 async function detectHarm(message) {
   const lower = message.toLowerCase();
 
