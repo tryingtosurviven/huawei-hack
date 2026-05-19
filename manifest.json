@@ -1,27 +1,39 @@
 {
   "manifest_version": 3,
   "name": "SafeSignal - AI Harm Pattern Recognition",
-  "version": "1.0.2",
-  "description": "Passively detects harmful patterns like cyberbullying, grooming, and scams in WhatsApp Web with Singlish support",
+  "version": "1.0.0",
+  "description": "Detects harmful online patterns like cyberbullying, grooming, scams, and Singlish abuse in real time.",
+
   "permissions": [
     "storage",
-    "activeTab"
+    "activeTab",
+    "notifications"
   ],
+
   "host_permissions": [
     "https://web.whatsapp.com/*"
   ],
+
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
+
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "SafeSignal"
+  },
+
   "content_scripts": [
     {
       "matches": ["https://web.whatsapp.com/*"],
-      "js": ["test-content.js"],    
-      "css": ["styles.css"],
-      "run_at": "document_end"
+      "js": ["content.js"]
     }
   ],
-  "action": {
-    "default_popup": "popup.html"
+
+  "icons": {
+    "16": "assets/icon16.png",
+    "48": "assets/icon48.png",
+    "128": "assets/icon128.png"
   }
 }
