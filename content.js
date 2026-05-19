@@ -24,121 +24,79 @@ chrome.storage.onChanged.addListener((changes) => {
 
 // Mock AI Detection Function (Placeholder for Huawei ModelArts API)
 async function detectHarmPattern(messageText, conversationContext = []) {
-  // Simulate API call delay
-  await new Promise(resolve => setTimeout(resolve, 100));
-  
   const text = messageText.toLowerCase();
   
-  // Singlish-aware pattern matching
-  const patterns = {
-    grooming: {
-      keywords: [
-        'meet me alone', 'don\'t tell your parents', 'keep secret',
-        'jangan cakap siapa siapa', 'just between us', 'delete this chat',
-        'i love you', 'you special', 'nobody understand you like me'
-      ],
-      isolationPhrases: ['alone', 'secret', 'don\'t tell', 'just us'],
-      confidence: 0
-    },
-    cyberbullying: {
-      singlishInsults: [
-        'go die lah', 'damn suay', 'loser sia', 'bodoh', 'stupid idiot',
-        'ugly af', 'nobody likes you', 'kys', 'kill yourself',
-        'useless piece of shit', 'go kms', 'die la you'
-      ],
-      confidence: 0
-    },
-    scams: {
-      phishingIndicators: [
-        'click this link', 'verify your account', 'you won',
-        'free money', 'urgent action required', 'limited time offer',
-        'confirm your details', 'suspended account', 'claim your prize',
-        'investment opportunity guaranteed'
-      ],
-      confidence: 0
-    },
-    oversharing: {
-      sensitiveInfo: [
-        'my nric', 'my password', 'credit card', 'bank account',
-        'my address is', 'meet at my house', 'home alone',
-        'parents not home', 'postal code'
-      ],
-      confidence: 0
-    }
-  };
+  // --- LAYER 1: INSTANT LOCAL PRIVACY GUARD ---
+  // We keep this local because it's faster and protects user data like NRICs.
+  const sensitiveInfo = [
+    'my nric', 'my password', 'credit card', 'bank account',
+    'my address is', 'postal code', 'home alone', 'parents not home'
+  ];
 
-  let detectedCategory = null;
-  let maxConfidence = 0;
-  let flaggedPhrases = [];
-
-  // Grooming Detection (context-aware)
-  patterns.grooming.keywords.forEach(keyword => {
-    if (text.includes(keyword)) {
-      patterns.grooming.confidence += 0.3;
-      flaggedPhrases.push(keyword);
-    }
-  });
-  
-  // Check for isolation pattern in conversation context
-  if (conversationContext.length >= 3) {
-    const recentMessages = conversationContext.slice(-5).join(' ').toLowerCase();
-    patterns.grooming.isolationPhrases.forEach(phrase => {
-      if (recentMessages.includes(phrase)) {
-        patterns.grooming.confidence += 0.2;
-      }
-    });
-  }
-
-  // Cyberbullying Detection (Singlish-aware)
-  patterns.cyberbullying.singlishInsults.forEach(insult => {
-    if (text.includes(insult)) {
-      patterns.cyberbullying.confidence += 0.4;
-      flaggedPhrases.push(insult);
-    }
-  });
-
-  // Scam Detection
-  patterns.scams.phishingIndicators.forEach(indicator => {
-    if (text.includes(indicator)) {
-      patterns.scams.confidence += 0.35;
-      flaggedPhrases.push(indicator);
-    }
-  });
-
-  // Check for suspicious URLs
-  const urlPattern = /(https?:\/\/[^\s]+)/g;
-  const urls = text.match(urlPattern);
-  if (urls && urls.length > 0) {
-    // Suspicious TLDs or shortened links
-    if (urls.some(url => url.includes('bit.ly') || url.includes('.tk') || url.includes('.ml'))) {
-      patterns.scams.confidence += 0.3;
-    }
-  }
-
-  // Oversharing Detection
-  patterns.oversharing.sensitiveInfo.forEach(info => {
+  for (const info of sensitiveInfo) {
     if (text.includes(info)) {
-      patterns.oversharing.confidence += 0.5;
-      flaggedPhrases.push(info);
+      return {
+        isHarmful: true,
+        category: 'oversharing',
+        confidence: 1.0,
+        flaggedPhrases: [info],
+        suggestion: getSuggestion('oversharing')
+      };
     }
-  });
+  }
 
-  // Determine highest confidence category
-  Object.keys(patterns).forEach(category => {
-    if (patterns[category].confidence > maxConfidence && patterns[category].confidence >= 0.4) {
-      maxConfidence = patterns[category].confidence;
-      detectedCategory = category;
+  // --- LAYER 2: LIONGUARD 2.1 AI ENGINE ---
+  // This is the "brain" you set up on Hugging Face.
+  const HF_TOKEN = "hf_YVmOVEkEIdGHjNvllAblk1Qlso swnTQHLU"; 
+  const url = "https://api-inference.huggingface.co/models/govtech/lionguard-2.1";
+
+  try {
+    const response = await fetch(url, {
+      headers: { 
+        "Authorization": "Bearer " + HF_TOKEN,
+        "Content-Type": "application/json"
+      },
+      method: "POST",
+      body: JSON.stringify({ inputs: messageText }),
+    });
+
+    const result = await response.json();
+    
+    if (result && result.length > 0) {
+      const topResult = result[0]; 
+      const category = topResult.label;
+
+      // LionGuard 2.1 labels: 'safe', 'toxic', 'insult', 'sexual', 'scam'
+      if (category !== "safe") {
+        // Map AI labels to your UI categories (for Aditi's UI)
+        let uiCategory = 'cyberbullying'; 
+        if (category === 'scam' || category === 'spam') uiCategory = 'scams';
+        if (category === 'sexual') uiCategory = 'grooming';
+
+        return {
+          isHarmful: true,
+          category: uiCategory,
+          confidence: topResult.score,
+          suggestion: getSuggestion(uiCategory)
+        };
+      }
     }
-  });
-
-  if (detectedCategory) {
-    return {
-      isHarmful: true,
-      category: detectedCategory,
-      confidence: Math.min(maxConfidence, 1.0),
-      flaggedPhrases: flaggedPhrases,
-      suggestion: getSuggestion(detectedCategory)
-    };
+  } catch (error) {
+    console.error("SafeSignal AI Layer Error:", error);
+    
+    // --- LAYER 3: EMERGENCY LOCAL BACKUP ---
+    // If API fails or is slow, this catches the most common Singlish insults.
+    const emergencyInsults = ['go die lah', 'bodoh', 'damn suay', 'stupid idiot', 'loser sia'];
+    for (const insult of emergencyInsults) {
+      if (text.includes(insult)) {
+        return {
+          isHarmful: true,
+          category: 'cyberbullying',
+          confidence: 0.6,
+          suggestion: getSuggestion('cyberbullying')
+        };
+      }
+    }
   }
 
   return { isHarmful: false };
@@ -171,38 +129,33 @@ function getSuggestion(category) {
   return suggestions[category];
 }
 
-// Create and inject alert card
 function showAlertCard(messageElement, detection) {
-  // Check if alert already exists for this message
   if (messageElement.querySelector('.safesignal-alert')) {
     return;
   }
 
   const alertCard = document.createElement('div');
   alertCard.className = 'safesignal-alert';
-  alertCard.innerHTML = `
-    <div class="safesignal-header">
-      <span class="safesignal-icon">🛡️</span>
-      <span class="safesignal-title">\${detection.suggestion.title}</span>
-      <button class="safesignal-close">×</button>
-    </div>
-    <p class="safesignal-message">\${detection.suggestion.message}</p>
-    <div class="safesignal-confidence">
-      Confidence: \${(detection.confidence * 100).toFixed(0)}%
-      \${familyModeEnabled ? '<span class="family-mode-badge">👨‍👩‍👧 Family Mode</span>' : ''}
-    </div>
-    <div class="safesignal-actions">
-      \${detection.suggestion.actions.map(action => 
-        `<button class="safesignal-action-btn">\${action}</button>`
-      ).join('')}
-    </div>
-  `;
+  
+  const actions = detection.suggestion.actions.map(action => {
+    return '<button class="safesignal-action-btn">' + action + '</button>';
+  }).join('');
+  
+  alertCard.innerHTML = '<div class="safesignal-header">' +
+    '<span class="safesignal-icon">🛡️</span>' +
+    '<span class="safesignal-title">' + detection.suggestion.title + '</span>' +
+    '<button class="safesignal-close">×</button>' +
+    '</div>' +
+    '<p class="safesignal-message">' + detection.suggestion.message + '</p>' +
+    '<div class="safesignal-confidence">' +
+    'Confidence: ' + (detection.confidence * 100).toFixed(0) + '%' +
+    (familyModeEnabled ? '<span class="family-mode-badge">👨‍👩‍👧 Family Mode</span>' : '') +
+    '</div>' +
+    '<div class="safesignal-actions">' + actions + '</div>';
 
-  // Insert after the message
   messageElement.style.position = 'relative';
   messageElement.appendChild(alertCard);
 
-  // Add event listeners
   alertCard.querySelector('.safesignal-close').addEventListener('click', () => {
     alertCard.remove();
   });
@@ -214,15 +167,13 @@ function showAlertCard(messageElement, detection) {
     });
   });
 
-  // Update stats
   detectionStats[detection.category]++;
   chrome.storage.local.set({ detectionStats });
 }
 
 function handleAction(action, detection) {
-  console.log(`SafeSignal: Action triggered - \${action}`, detection);
+  console.log('SafeSignal: Action triggered - ' + action, detection);
   
-  // In a real implementation, these would trigger actual platform actions
   switch(action) {
     case 'Block Contact':
     case 'Block Sender':
@@ -246,19 +197,16 @@ function handleAction(action, detection) {
       alert('This would delete the message (demo mode)');
       break;
     default:
-      alert(`Action: \${action} (demo mode)`);
+      alert('Action: ' + action + ' (demo mode)');
   }
 }
 
-// Conversation context storage
 let conversationHistory = [];
 
-// Observer to monitor new messages
 const observer = new MutationObserver(async (mutations) => {
   for (const mutation of mutations) {
     if (mutation.addedNodes.length) {
       mutation.addedNodes.forEach(async (node) => {
-        // WhatsApp Web message selectors (may need updates as WhatsApp changes)
         if (node.nodeType === 1) {
           const messageElements = node.querySelectorAll('[data-id], .message-in, .message-out');
           
@@ -267,13 +215,11 @@ const observer = new MutationObserver(async (mutations) => {
             if (textElement && textElement.textContent.trim()) {
               const messageText = textElement.textContent.trim();
               
-              // Add to conversation history
               conversationHistory.push(messageText);
               if (conversationHistory.length > 20) {
-                conversationHistory.shift(); // Keep last 20 messages
+                conversationHistory.shift();
               }
               
-              // Run detection
               const detection = await detectHarmPattern(messageText, conversationHistory);
               
               if (detection.isHarmful) {
@@ -288,7 +234,6 @@ const observer = new MutationObserver(async (mutations) => {
   }
 });
 
-// Start observing
 function initObserver() {
   const chatContainer = document.querySelector('#main');
   if (chatContainer) {
@@ -298,12 +243,10 @@ function initObserver() {
     });
     console.log('SafeSignal: Observer initialized successfully');
   } else {
-    // Retry after delay
     setTimeout(initObserver, 2000);
   }
 }
 
-// Initialize when DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initObserver);
 } else {
