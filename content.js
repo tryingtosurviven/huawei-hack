@@ -3,6 +3,7 @@ console.log("SafeSignal active");
 // ===============================
 // HARM DATABASE
 // ===============================
+const nricRegex = /[STFGM][0-9]{7}[A-Z]/i;
 
 const harmfulPatterns = {
   bullying: [
@@ -56,31 +57,44 @@ const harmfulPatterns = {
 // DETECTION ENGINE
 // ===============================
 
-function detectHarm(message) {
-
+async function detectHarm(message) {
   const lower = message.toLowerCase();
 
+  // 1. PRIORITY: Local NRIC Check
+  if (nricRegex.test(message)) {
+    return {
+      detected: true,
+      category: 'oversharing',
+      pattern: 'NRIC Pattern',
+      severity: 'high',
+      suggestion: 'You are sharing an NRIC number. This is high-risk personal data!'
+    };
+  }
+
+  // 2. Local Keyword Check (Fast)
   for (const category in harmfulPatterns) {
-
-    const patterns = harmfulPatterns[category];
-
-    for (const pattern of patterns) {
-
+    for (const pattern of harmfulPatterns[category]) {
       if (lower.includes(pattern)) {
-
-        return {
-          detected: true,
-          category,
-          pattern,
-          severity: getSeverity(category)
-        };
+        return { detected: true, category, pattern, severity: getSeverity(category), suggestion: `Detected harmful language: ${pattern}` };
       }
     }
   }
 
-  return {
-    detected: false
-  };
+  // 3. AI Check (For phrases like "useless pig")
+  // Replace this with your actual fetch() call to LionGuard / Huawei AI if you have the URL
+  // For now, here is the logic:
+  const aiResult = await callLionGuardAI(message); 
+  if (aiResult.isHarmful) {
+    return {
+      detected: true,
+      category: aiResult.category,
+      pattern: 'AI Analysis',
+      severity: 'medium',
+      suggestion: aiResult.suggestion
+    };
+  }
+
+  return { detected: false };
 }
 
 function getSeverity(category) {
@@ -127,67 +141,30 @@ async function saveIncident(incident) {
 // ===============================
 
 function showAlert(result, text) {
-
-  const existing = document.getElementById("safesignal-alert");
-
-  if (existing) {
-    existing.remove();
-  }
+  if (document.getElementById("safesignal-alert")) return;
 
   const alert = document.createElement('div');
-
   alert.id = "safesignal-alert";
+  
+  const displayMessage = result.suggestion || `Potential ${result.category} detected.`;
 
   alert.innerHTML = `
-    <div style="
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      width: 320px;
-      background: rgba(255,255,255,0.98);
-      border-left: 6px solid orange;
-      padding: 16px;
-      z-index: 999999;
-      border-radius: 12px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-      font-family: Arial, sans-serif;
-    ">
-      <h3 style="margin-top:0;">
-        ⚠ Potential ${result.category}
-      </h3>
-
-      <p style="font-size:14px;">
-        ${text}
-      </p>
-
-      <small>
-        Detected pattern: "${result.pattern}"
-      </small>
-
-      <div style="margin-top:12px;">
-        <button id="safe-btn" style="
-          background:#25D366;
-          border:none;
-          color:white;
-          padding:8px 12px;
-          border-radius:8px;
-          cursor:pointer;
-        ">
-          Safe Reply
-        </button>
+    <div style="position: fixed; top: 20px; right: 20px; width: 320px; background: white; border-left: 8px solid #ff4444; padding: 20px; z-index: 999999; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); font-family: sans-serif;">
+      <h3 style="margin: 0; color: #ff4444;">🛡️ SafeSignal Alert</h3>
+      <p style="color: #333; margin: 10px 0;"><strong>${result.category.toUpperCase()}</strong></p>
+      <p style="font-size: 14px; color: #666;">${displayMessage}</p>
+      <div style="margin-top: 15px; display: flex; gap: 10px;">
+        <button onclick="this.parentElement.parentElement.parentElement.remove()" style="flex: 1; background: #eee; border: none; padding: 8px; border-radius: 5px; cursor: pointer;">Dismiss</button>
+        <button style="flex: 1; background: #ff4444; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer;">Safe Reply</button>
       </div>
     </div>
   `;
-
   document.body.appendChild(alert);
 
-  setTimeout(() => {
-
-    if (alert.parentNode) {
-      alert.remove();
-    }
-
-  }, 6000);
+  // Link to Shaira's Vault
+  if (typeof saveIncident === 'function') {
+    saveIncident({ text, category: result.category, severity: result.severity || 'medium' });
+  }
 }
 
 // ===============================
@@ -210,7 +187,7 @@ const observer = new MutationObserver((mutations) => {
 
         if (!text) return;
 
-        const result = detectHarm(text);
+        const result = await detectHarm(text);
 
         if (result.detected) {
 
@@ -242,29 +219,28 @@ console.log("SafeSignal active");
 
 // SIMPLE TEST SCANNER (DEBUG VERSION)
 
-function scan() {
-
+async function scan() {
   const messages = document.querySelectorAll("div[role='row'], span.selectable-text");
 
-  messages.forEach((m) => {
-
+  for (const m of messages) {
     const text = m.innerText;
-
-    if (!text) return;
+    if (!text) continue;
 
     console.log("SafeSignal scanning:", text);
 
-    const result = detectHarm(text);
+    // Added 'await' here because detectHarm is now async
+    const result = await detectHarm(text);
 
     if (result.detected) {
       console.log("SAFE SIGNAL HIT:", result);
       showAlert(result, text);
     }
-
-  });
-
+  }
 }
 
-setInterval(scan, 2000);
+// Change the interval to 3000ms (3 seconds) to give the AI time to breathe
+setInterval(async () => {
+  await scan();
+}, 3000);
 
-console.log("SafeSignal scanner running");
+console.log("SafeSignal scanner running with Async support");
