@@ -203,27 +203,33 @@ function handleAction(action, detection) {
 
 let conversationHistory = [];
 
+// Observer to monitor new messages
 const observer = new MutationObserver(async (mutations) => {
   for (const mutation of mutations) {
     if (mutation.addedNodes.length) {
       mutation.addedNodes.forEach(async (node) => {
         if (node.nodeType === 1) {
-          const messageElements = node.querySelectorAll('[data-id], .message-in, .message-out');
+          // WE ARE MAKING THIS WIDER: Look for any div that might contain text
+          const messageElements = node.querySelectorAll('.message-in, .message-out, [data-id]');
           
           for (const msgElement of messageElements) {
-            const textElement = msgElement.querySelector('span.selectable-text');
+            // Search for the text within the bubble more broadly
+            const textElement = msgElement.querySelector('span.selectable-text, .copyable-text span');
+            
             if (textElement && textElement.textContent.trim()) {
               const messageText = textElement.textContent.trim();
               
+              // Add to conversation history (Important for context-aware detection)
               conversationHistory.push(messageText);
               if (conversationHistory.length > 20) {
-                conversationHistory.shift();
+                conversationHistory.shift(); 
               }
               
+              // Run the Hybrid Detection (Privacy Guard + LionGuard AI)
               const detection = await detectHarmPattern(messageText, conversationHistory);
               
               if (detection.isHarmful) {
-                console.log('SafeSignal: Harmful pattern detected', detection);
+                console.log('✅ SafeSignal Triggered:', detection.category);
                 showAlertCard(msgElement, detection);
               }
             }
