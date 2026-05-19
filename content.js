@@ -167,13 +167,35 @@ function showAlert(result, text) {
       <h3 style="margin: 0; color: #ff4444;">🛡️ SafeSignal Alert</h3>
       <p style="color: #333; margin: 10px 0;"><strong>${result.category.toUpperCase()}</strong></p>
       <p style="font-size: 14px; color: #666;">${displayMessage}</p>
-      <div style="margin-top: 15px; display: flex; gap: 10px;">
-        <button onclick="this.parentElement.parentElement.parentElement.remove()" style="flex: 1; background: #eee; border: none; padding: 8px; border-radius: 5px; cursor: pointer;">Dismiss</button>
-        <button style="flex: 1; background: #ff4444; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer;">Safe Reply</button>
+
+      <div style="margin-top: 15px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; gap: 8px;">
+          <button id="dismiss-btn" style="flex: 1; background: #eee; border: none; padding: 8px; border-radius: 5px; cursor: pointer;">Dismiss</button>
+          <button id="safe-reply-btn" style="flex: 1; background: #ff4444; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer;">Safe Reply</button>
+        </div>
+        <button id="false-positive-btn" style="width: 100%; background: transparent; border: 1px solid #ccc; color: #888; padding: 5px; border-radius: 5px; cursor: pointer; font-size: 12px;">Not Harmful (Report Mistake)</button>
       </div>
     </div>
   `;
   document.body.appendChild(alert);
+
+  // --- BUTTON LOGIC ---
+  
+  // 1. Dismiss Button
+  alert.querySelector('#dismiss-btn').onclick = () => alert.remove();
+
+  // 2. Safe Reply (Link to Aditi's UI later)
+  alert.querySelector('#safe-reply-btn').onclick = () => {
+    console.log("Opening Aditi's Safe Reply Coach...");
+    alert.remove();
+  };
+
+  // 3. False Positive Feedback (Natalie's Task!)
+  alert.querySelector('#false-positive-btn').onclick = () => {
+    console.log("USER FEEDBACK: False positive reported for:", text);
+    // In a real app, you'd send this to a database to retrain the AI
+    alert.remove();
+  };
 
   // Link to Shaira's Vault
   if (typeof saveIncident === 'function') {
