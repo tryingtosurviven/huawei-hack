@@ -22,6 +22,57 @@ chrome.storage.onChanged.addListener((changes) => {
   }
 });
 
+// ===============================
+// EXPLAINABILITY DATABASE
+// ===============================
+
+const harmExplanations = {
+
+  bullying: {
+    title: "Repeated Humiliation",
+    explanation:
+      "This message contains language commonly associated with insults, humiliation, or harassment."
+  },
+
+  singlishBullying: {
+    title: "Social Pressure",
+    explanation:
+      "This Singlish phrase is often used to shame, mock, or pressure another person."
+  },
+
+  grooming: {
+    title: "Boundary Testing",
+    explanation:
+      "The sender may be encouraging secrecy or trying to build inappropriate trust."
+  },
+
+  threats: {
+    title: "Threat or Blackmail",
+    explanation:
+      "The message contains language that may pressure, intimidate, or threaten someone."
+  },
+
+  scams: {
+    title: "Urgency Scam",
+    explanation:
+      "The sender is creating urgency or requesting sensitive information."
+  }
+};
+
+const riskTags = {
+
+  bullying: "Repeated Humiliation",
+
+  singlishBullying: "Social Pressure",
+
+  grooming: "Boundary Testing",
+
+  threats: "Emotional Blackmail",
+
+  scams: "Urgency Scam"
+};
+
+
 // Mock AI Detection Function (Placeholder for Huawei ModelArts API)
 async function detectHarmPattern(messageText, conversationContext = []) {
   const text = messageText.toLowerCase();
@@ -130,9 +181,7 @@ function getSuggestion(category) {
 }
 
 function showAlertCard(messageElement, detection) {
-  if (messageElement.querySelector('.safesignal-alert')) {
-    return;
-  }
+  if (messageElement.querySelector('.safesignal-alert')) return;
 
   const alertCard = document.createElement('div');
   alertCard.className = 'safesignal-alert';
@@ -203,6 +252,23 @@ function handleAction(action, detection) {
 
 let conversationHistory = [];
 
+// ===============================
+// STORAGE (Required for Shaira's Vault)
+// ===============================
+
+async function saveIncident(incident) {
+  const result = await chrome.storage.local.get(['incidents']);
+  const incidents = result.incidents || [];
+
+  incidents.push({
+    ...incident,
+    timestamp: new Date().toISOString()
+  });
+
+  await chrome.storage.local.set({ incidents });
+  console.log("SafeSignal: Incident saved to Evidence Vault");
+}
+
 // Observer to monitor new messages
 const observer = new MutationObserver(async (mutations) => {
   for (const mutation of mutations) {
@@ -213,11 +279,17 @@ const observer = new MutationObserver(async (mutations) => {
           const messageElements = node.querySelectorAll('.message-in, .message-out, [data-id]');
           
           for (const msgElement of messageElements) {
+            // --- ADD THIS LINE ---
+            // If we already flagged this specific bubble, skip it!
+            if (msgElement.hasAttribute('data-safesignal-checked')) continue;
+
             // Search for the text within the bubble more broadly
             const textElement = msgElement.querySelector('span.selectable-text, .copyable-text span');
             
             if (textElement && textElement.textContent.trim()) {
               const messageText = textElement.textContent.trim();
+              msgElement.setAttribute('data-safesignal-checked', 'true');
+
               
               // Add to conversation history (Important for context-aware detection)
               conversationHistory.push(messageText);
@@ -230,6 +302,15 @@ const observer = new MutationObserver(async (mutations) => {
               
               if (detection.isHarmful) {
                 console.log('✅ SafeSignal Triggered:', detection.category);
+
+                await saveIncident({
+                  text: messageText, 
+                  category: detection.category,
+                  severity: detection.severity || 'medium',
+                  tag: riskTags[detection.category] || "General Risk",
+                  explanation: harmExplanations[detection.category]?.explanation || "Harmful pattern detected."
+                });
+
                 showAlertCard(msgElement, detection);
               }
             }
@@ -241,20 +322,24 @@ const observer = new MutationObserver(async (mutations) => {
 });
 
 function initObserver() {
-  const chatContainer = document.querySelector('#main');
-  if (chatContainer) {
-    observer.observe(chatContainer, {
+  // Use document.body for better stability against WhatsApp UI refreshes
+  const targetNode = document.body;
+
+  if (targetNode) {
+    observer.observe(targetNode, {
       childList: true,
       subtree: true
     });
-    console.log('SafeSignal: Observer initialized successfully');
+    console.log('SafeSignal: Stable Body Observer initialized');
   } else {
-    setTimeout(initObserver, 2000);
+    // Retry if for some reason the body isn't ready
+    setTimeout(initObserver, 1000);
   }
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initObserver);
-} else {
+// Ensure the script runs after the page has started loading
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
   initObserver();
+} else {
+  document.addEventListener('DOMContentLoaded', initObserver);
 }

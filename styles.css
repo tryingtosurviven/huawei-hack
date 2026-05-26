@@ -223,3 +223,64 @@ input:checked + .slider:before {
   margin: 0;
   padding: 0;
 }
+
+/* --- WhatsApp Web Alert Styling --- */
+.safesignal-alert {
+  position: absolute; /* Makes it float over the chat bubble */
+  top: -10px;
+  left: 10px;
+  width: 320px; /* Fixed width to match Shaira's card */
+  background: white !important;
+  color: #333 !important;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  padding: 16px;
+  z-index: 9999; /* Ensures it stays on top */
+  font-family: sans-serif;
+  border-top: 5px solid #ff9800; /* SafeSignal Orange */
+}
+
+.safesignal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-weight: bold;
+  color: #ff9800;
+}
+
+.safesignal-message {
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 15px;
+  color: #555;
+}
+
+.safesignal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.safesignal-action-btn {
+  background: #f0f2f5;
+  border: none;
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s;
+}
+
+.safesignal-action-btn:hover {
+  background: #e1e4e8;
+}
+
+.safesignal-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #999;
+}

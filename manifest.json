@@ -5,10 +5,12 @@
   "description": "Passively detects harmful patterns like cyberbullying, grooming, and scams in WhatsApp Web with Singlish support",
   "permissions": [
     "storage",
+    "unlimitedStorage",
     "activeTab"
   ],
   "host_permissions": [
-    "https://web.whatsapp.com/*"
+    "https://web.whatsapp.com/*",
+    "https://api-inference.huggingface.co/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -21,7 +23,17 @@
       "run_at": "document_end"
     }
   ],
+  "icons": {
+    "16": "assets/icon16.png",
+    "48": "assets/icon48.png",
+    "128": "assets/icon128.png"
+  },
   "action": {
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "assets/icon16.png",
+      "48": "assets/icon48.png",
+      "128": "assets/icon128.png"
+    }
   }
 }
