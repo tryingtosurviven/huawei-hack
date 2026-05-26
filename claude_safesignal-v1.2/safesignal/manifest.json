@@ -11,6 +11,8 @@
   ],
   "host_permissions": [
     "https://web.whatsapp.com/*",
+    "https://web.telegram.org/*",
+    "https://www.instagram.com/*",
     "https://api-inference.huggingface.co/*"
   ],
   "background": {
@@ -19,7 +21,19 @@
   "content_scripts": [
     {
       "matches": ["https://web.whatsapp.com/*"],
-      "js": ["content.js"],
+      "js": ["core/singlish_detector.js", "adapters/whatsapp_adapter.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://web.telegram.org/*"],
+      "js": ["core/singlish_detector.js", "adapters/telegram_adapter.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://www.instagram.com/*"],
+      "js": ["core/singlish_detector.js", "adapters/instagram_adapter.js"],
       "css": ["styles.css"],
       "run_at": "document_idle"
     }
