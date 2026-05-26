@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SafeSignal</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo">🛡️</div>
+    <h1>SafeSignal</h1>
+    <p class="tagline">AI Harm Pattern Recognition · 🇸🇬 SG</p>
+  </div>
+
+  <!-- ── DETECTION PANELS (hidden until a detection fires) ────────────────── -->
+  <div id="detection-wrapper" class="hidden">
+
+    <!-- 1. Pause Warning -->
+    <div id="pause-warning" class="glass-panel warning-panel">
+      <div class="section-title">⚠️ Pause Before Replying</div>
+      <p class="warning-text">
+        We detected a potential <strong id="harm-category">Harmful Pattern</strong>.
+        Take a breath — you do not have to reply immediately.
+      </p>
+      <p id="pause-explanation" class="warning-subtext"></p>
+      <p id="pause-confidence" class="confidence-text"></p>
+    </div>
+
+    <!-- 2. Reply Coach -->
+    <div id="reply-coach" class="glass-panel">
+      <div class="section-title">💬 Reply Coach</div>
+      <p class="warning-text">Tap a reply to copy it to your clipboard:</p>
+      <div id="reply-options" class="reply-options">
+        <!-- Populated dynamically by popup.js -->
+        <p class="empty-state">Waiting for detection…</p>
+      </div>
+    </div>
+
+    <!-- 3. Aftercare Checklist -->
+    <div id="aftercare-checklist" class="glass-panel">
+      <div class="section-title">✅ Aftercare Checklist</div>
+      <div id="aftercare-list">
+        <!-- Populated by popup.js buildAftercare() -->
+      </div>
+    </div>
+
+    <!-- Dismiss -->
+    <button id="btn-dismiss-detection" class="dismiss-btn">Dismiss alert</button>
+
+  </div><!-- /detection-wrapper -->
+
+  <!-- ── STATS ─────────────────────────────────────────────────────────────── -->
+  <div class="glass-panel">
+    <div class="section-title">📊 Session Statistics</div>
+    <div class="stat-item">
+      <span class="stat-label">🚨 Grooming</span>
+      <span class="stat-value" id="stat-grooming">0</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">😢 Cyberbullying</span>
+      <span class="stat-value" id="stat-cyberbullying">0</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">⚠️ Threats</span>
+      <span class="stat-value" id="stat-threats">0</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">🎣 Scams</span>
+      <span class="stat-value" id="stat-scams">0</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">📢 Oversharing</span>
+      <span class="stat-value" id="stat-oversharing">0</span>
+    </div>
+  </div>
+
+  <!-- ── EVIDENCE VAULT ────────────────────────────────────────────────────── -->
+  <div class="glass-panel">
+    <div class="section-title">📁 Evidence Vault</div>
+    <div class="vault-controls">
+      <button id="btn-show-vault" class="vault-btn">View Incidents</button>
+      <button id="btn-export-vault" class="vault-btn vault-btn--export">Export Report</button>
+    </div>
+    <div id="vault-panel" class="hidden">
+      <div id="vault-list"></div>
+    </div>
+  </div>
+
+  <!-- ── SETTINGS ──────────────────────────────────────────────────────────── -->
+  <div class="glass-panel">
+    <div class="toggle-item">
+      <div class="toggle-label">
+        <span>👨‍👩‍👧</span>
+        <span>Family Mode</span>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="familyModeToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    Powered by Huawei ModelArts + LionGuard 2.1
+    <div class="huawei-badge">Huawei Hackathon 2025</div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
