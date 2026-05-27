@@ -1,72 +1,48 @@
-/**
- * SafeSignal — Telegram Web Adapter
- *
- * Supports both Telegram Web K (web.telegram.org/k/) and Web A (/a/).
- *
- * BUG FIX: The original used node.querySelectorAll('.bubble') which only
- * searches DESCENDANTS. When Telegram's DOM fires a mutation, the added
- * node IS the .bubble itself — so querySelectorAll never found it.
- * The fix is _getCandidates(), which checks node itself first, then children.
- */
-
-// ─── PLATFORM-SPECIFIC SELECTORS ─────────────────────────────────────────────
-
-// Telegram Web K: messages are .bubble elements
-// Telegram Web A: messages are .Message elements
-const MESSAGE_SELECTOR = '.bubble, .Message, .message-list-item';
-
+// Telegram Web DOM Selectors — updated for current Telegram Web A (2024-2025)
+// Telegram Web A wraps each message in .Message; text lives in .text-content
+// For Telegram Web K (k.web.telegram.org), bubbles use .bubble > .message
 function extractText(node) {
-  // Ordered from most-specific to broadest.
-  // Telegram Web K uses .text-content and .translatable-message
-  // Telegram Web A uses .message (inner div)
+  // Web A selectors first, then Web K fallbacks
   const selectors = [
-    '.text-content',
-    '.translatable-message',
-    '.message-text',
-    '.bubble-content .message',
-    '.message span',
+    '.text-content',          // Web A — plain text
+    '.message-text',          // Web A — older builds
+    '.bubble-content .text',  // Web K
+    '.message > .text',       // Web K fallback
+    '.reply-markup + .text',  // edge case
   ];
   for (const sel of selectors) {
     const el = node.querySelector(sel);
-    const text = el?.innerText?.trim();
-    if (text) return text;
+    const t = el?.innerText?.trim() || el?.textContent?.trim();
+    if (t) return t;
   }
   return null;
 }
 
-// ─── THE KEY FIX: check the node itself, not just its children ───────────────
-
-function _getCandidates(node) {
-  const results = [];
-  // 1. The added node might itself be a message bubble — check it first
-  try {
-    if (node.matches && node.matches(MESSAGE_SELECTOR)) {
-      results.push(node);
-    }
-  } catch (_) { /* node.matches can throw on non-element nodes */ }
-
-  // 2. Also search inside it for nested containers (e.g. a chat-list wrapper added at once)
-  try {
-    results.push(...node.querySelectorAll(MESSAGE_SELECTOR));
-  } catch (_) {}
-
-  // Deduplicate (a node could match both conditions)
-  return [...new Set(results)];
+function getMessageContainers(node) {
+  // Web A uses .Message; Web K uses .bubble; also scan the node itself
+  const found = [];
+  // If the mutated node IS a message container, include it directly
+  for (const sel of ['.Message', '.message-list-item', '.bubble', '[data-mid]', '[data-peer-id]']) {
+    if (node.matches && node.matches(sel)) found.push(node);
+  }
+  // Also query descendants
+  node.querySelectorAll('.Message, .message-list-item, .bubble, [data-mid]').forEach(el => found.push(el));
+  return found;
 }
 
-// ─── SHARED ADAPTER LOGIC ────────────────────────────────────────────────────
-
 const PLATFORM_NAME = 'Telegram';
+// [Paste the processNode, injectAlertCard, and initObserver functions from claudefix_content.js here]
+// ─── SHARED ADAPTER LOGIC ──────────────────────────────────────────────────
 let conversationHistory = [];
 const PROCESSED_ATTR = 'data-ss-processed';
 
 async function processNode(node) {
   if (node.nodeType !== Node.ELEMENT_NODE) return;
 
-  const candidates = _getCandidates(node); // ← was: getMessageContainers(node)
+  // Use the specific containers defined at the top of this file
+  const candidates = getMessageContainers(node);
 
   for (const msgEl of candidates) {
-    // Synchronous stamp to prevent double-processing across async gaps
     if (msgEl.hasAttribute(PROCESSED_ATTR)) continue;
     msgEl.setAttribute(PROCESSED_ATTR, '1');
 
@@ -76,23 +52,23 @@ async function processNode(node) {
     conversationHistory.push(text);
     if (conversationHistory.length > 30) conversationHistory.shift();
 
-    // detectHarm() is provided by core/singlish_detector.js (loaded first)
+    // detectHarm is provided by core/singlish_detector.js
     const detection = await detectHarm(text, conversationHistory);
 
     if (detection.isHarmful) {
-      console.log(`[SafeSignal][${PLATFORM_NAME}] ${detection.category} @ ${(detection.confidence * 100).toFixed(0)}%`);
+      console.log(`[SafeSignal][${PLATFORM_NAME}] ${detection.category} detected`);
 
       const incident = {
         text,
-        category:        detection.category,
-        tag:             detection.tag,
-        confidence:      detection.confidence,
-        flaggedPhrases:  detection.flaggedPhrases,
-        explanation:     detection.explanation,
+        category: detection.category,
+        tag: detection.tag,
+        confidence: detection.confidence,
+        flaggedPhrases: detection.flaggedPhrases,
+        explanation: detection.explanation,
         escalationStages: detection.escalationStages,
-        aiLayer:         detection.aiLayer,
-        platform:        PLATFORM_NAME,
-        timestamp:       new Date().toISOString(),
+        aiLayer: detection.aiLayer,
+        platform: PLATFORM_NAME, // <--- This helps the Evidence Vault!
+        timestamp: new Date().toISOString(),
       };
 
       await saveIncident(incident);
@@ -104,13 +80,12 @@ async function processNode(node) {
 }
 
 function injectAlertCard(msgElement, detection, incident) {
-  if (msgElement.querySelector('.ss-alert')) return; // deduplicate
-  const card = buildAlertCard(detection, incident);  // from singlish_detector.js
+  if (msgElement.querySelector('.ss-alert')) return;
   msgElement.style.position = 'relative';
+  msgElement.style.overflow = 'visible';
+  const card = buildAlertCard(detection, incident, msgElement);
   msgElement.appendChild(card);
 }
-
-// ─── OBSERVER ────────────────────────────────────────────────────────────────
 
 const observer = new MutationObserver(mutations => {
   for (const mut of mutations) {
@@ -125,14 +100,13 @@ function initObserver() {
 
 initObserver();
 
-// SPA navigation reset (Telegram is a single-page app)
+// Reset logic for SPA navigation
 let lastUrl = location.href;
 new MutationObserver(() => {
   if (location.href !== lastUrl) {
     lastUrl = location.href;
     conversationHistory = [];
-    document.querySelectorAll(`[${PROCESSED_ATTR}]`)
-      .forEach(el => el.removeAttribute(PROCESSED_ATTR));
+    document.querySelectorAll(`[${PROCESSED_ATTR}]`).forEach(el => el.removeAttribute(PROCESSED_ATTR));
     console.log(`[SafeSignal] ${PLATFORM_NAME} chat switch — context reset.`);
   }
 }).observe(document.body, { childList: true, subtree: true });

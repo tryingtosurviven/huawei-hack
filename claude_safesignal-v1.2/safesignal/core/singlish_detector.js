@@ -191,9 +191,28 @@ function notifyPopup(detection) {
   chrome.runtime.sendMessage({ action: 'HARM_DETECTED', category: detection.category, tag: detection.tag, confidence: detection.confidence, replies: SAFE_REPLIES[detection.category] || [], explanation: detection.explanation }).catch(() => {});
 }
 
-function buildAlertCard(detection, incidentRef) {
+function buildAlertCard(detection, incidentRef, anchorEl) {
+  // Remove any existing card for this anchor to prevent stacking
+  const existing = anchorEl && anchorEl.querySelector('.ss-alert');
+  if (existing) existing.remove();
+
   const card = document.createElement('div');
   card.className = `ss-alert ss-alert--${detection.category}`;
+
+  // Position the card as an absolute overlay above the bubble, not inline flow
+  card.style.cssText = [
+    'position:absolute',
+    'z-index:2147483647',
+    'top:auto',
+    'bottom:calc(100% + 6px)',
+    'left:0',
+    'right:0',
+    'width:min(320px, 90vw)',
+    'max-height:70vh',
+    'overflow-y:auto',
+    'pointer-events:all',
+  ].join(';');
+
   let timelineHTML = '';
   if (detection.escalationStages && detection.escalationStages.length >= 2) {
     const dots = detection.escalationStages.map(s => `<div class="ss-stage"><span class="ss-stage__dot"></span><span class="ss-stage__label">Stage ${s.stage}: ${s.label}</span></div>`).join('');

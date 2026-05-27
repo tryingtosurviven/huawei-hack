@@ -62,9 +62,11 @@ async function processNode(node) {
 }
 
 function injectAlertCard(msgElement, detection, incident) {
+  // Deduplicate: only one card per bubble
   if (msgElement.querySelector('.ss-alert')) return;
-  const card = buildAlertCard(detection, incident); // buildAlertCard is in singlish_detector.js
   msgElement.style.position = 'relative';
+  msgElement.style.overflow = 'visible'; // let the card float above neighbours
+  const card = buildAlertCard(detection, incident, msgElement);
   msgElement.appendChild(card);
 }
 
