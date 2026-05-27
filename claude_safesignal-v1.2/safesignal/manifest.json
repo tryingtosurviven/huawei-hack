@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "SafeSignal — AI Harm Pattern Recognition",
-  "version": "1.2.0",
-  "description": "Passively detects grooming, cyberbullying, scams and oversharing in WhatsApp Web. Full Singlish/code-mixed support. Built for Singapore.",
+  "version": "1.3.0",
+  "description": "Passively detects grooming, cyberbullying, scams and oversharing across WhatsApp, Telegram, and Instagram. Full Singlish/code-mixed support. Built for Singapore.",
   "permissions": [
     "storage",
     "unlimitedStorage",
@@ -36,6 +36,21 @@
       "js": ["core/singlish_detector.js", "adapters/instagram_adapter.js"],
       "css": ["styles.css"],
       "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "styles.css",
+        "assets/icon16.png",
+        "assets/icon48.png",
+        "assets/icon128.png"
+      ],
+      "matches": [
+        "https://web.whatsapp.com/*",
+        "https://web.telegram.org/*",
+        "https://www.instagram.com/*"
+      ]
     }
   ],
   "action": {
