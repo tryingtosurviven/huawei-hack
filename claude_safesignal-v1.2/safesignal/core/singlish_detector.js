@@ -192,43 +192,108 @@ function notifyPopup(detection) {
 }
 
 function buildAlertCard(detection, incidentRef, anchorEl) {
-  // Remove any existing card for this anchor to prevent stacking
-  const existing = anchorEl && anchorEl.querySelector('.ss-alert');
-  if (existing) existing.remove();
+  // Check if a badge wrapper already exists to prevent duplicate icons
+  let badgeWrapper = anchorEl.querySelector('.ss-badge-wrapper');
+  if (!badgeWrapper) {
+    badgeWrapper = document.createElement('div');
+    badgeWrapper.className = 'ss-badge-wrapper';
+    badgeWrapper.style.cssText = 'position:absolute; top:2px; right:-28px; z-index:2147483646; cursor:pointer; font-size:16px; transition: transform 0.2s;';
+    badgeWrapper.innerHTML = '🛡️';
+    
+    // Add custom hover glow effect
+    badgeWrapper.onmouseenter = () => badgeWrapper.style.transform = 'scale(1.2)';
+    badgeWrapper.onmouseleave = () => badgeWrapper.style.transform = 'scale(1.0)';
+    anchorEl.appendChild(badgeWrapper);
+  }
 
+  // Create the hidden overlay card
   const card = document.createElement('div');
   card.className = `ss-alert ss-alert--${detection.category}`;
-
-  // Position the card as an absolute overlay above the bubble, not inline flow
   card.style.cssText = [
+    'display:none', // Hidden by default until shield is clicked
     'position:absolute',
     'z-index:2147483647',
-    'top:auto',
-    'bottom:calc(100% + 6px)',
+    'bottom:calc(100% + 8px)',
     'left:0',
-    'right:0',
-    'width:min(320px, 90vw)',
-    'max-height:70vh',
+    'width:300px',
+    'max-height:60vh',
     'overflow-y:auto',
+    'background:#fff',
+    'border-radius:8px',
+    'box-shadow:0 4px 12px rgba(0,0,0,0.15)',
     'pointer-events:all',
+    'padding:12px'
   ].join(';');
+
+  // Toggle card visibility when clicking the shield badge
+  badgeWrapper.onclick = (e) => {
+    e.stopPropagation();
+    const isHidden = card.style.display === 'none';
+    // Close any other open alert cards on the screen first
+    document.querySelectorAll('.ss-alert').forEach(el => el.style.display = 'none');
+    card.style.display = isHidden ? 'block' : 'none';
+  };
 
   let timelineHTML = '';
   if (detection.escalationStages && detection.escalationStages.length >= 2) {
     const dots = detection.escalationStages.map(s => `<div class="ss-stage"><span class="ss-stage__dot"></span><span class="ss-stage__label">Stage ${s.stage}: ${s.label}</span></div>`).join('');
     timelineHTML = `<div class="ss-timeline"><div class="ss-timeline__title">⚠ Escalation Pattern</div>${dots}</div>`;
   }
+  
   const replies = (SAFE_REPLIES[detection.category] || []).map(r => `<button class="ss-reply" data-text="${r.text.replace(/"/g, '&quot;')}">${r.text}</button>`).join('');
-  card.innerHTML = `<div class="ss-header"><span class="ss-icon">🛡️</span><div class="ss-header__text"><div class="ss-title">SafeSignal Alert</div><div class="ss-tag ss-tag--${detection.category}">${detection.tag || 'Alert'}</div></div><button class="ss-close">×</button></div><div class="ss-body"><p class="ss-why"><strong>Why am I seeing this?</strong><br>${detection.explanation}</p>${timelineHTML}<div class="ss-confidence">Confidence: <strong>${(detection.confidence*100).toFixed(0)}%</strong></div><div class="ss-section-label">💬 Reply Coach</div><div class="ss-replies">${replies}</div><div class="ss-actions"><button class="ss-btn ss-btn--primary" data-action="save-evidence">📥 Save Evidence</button></div></div>`;
-  card.querySelector('.ss-close').addEventListener('click', () => card.remove());
-  card.querySelectorAll('.ss-reply').forEach(btn => { btn.addEventListener('click', async () => { await navigator.clipboard.writeText(btn.dataset.text); btn.textContent = '✓ Copied!'; setTimeout(() => btn.textContent = btn.dataset.text, 2000); }); });
-  card.querySelector('[data-action="save-evidence"]').addEventListener('click', () => exportEvidence(incidentRef));
+  
+  card.innerHTML = `
+    <div class="ss-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; border-bottom:1px solid #eee; padding-bottom:4px;">
+      <span class="ss-tag ss-tag--${detection.category}" style="font-weight:bold; color:red;">[${detection.tag || 'Alert'}]</span>
+      <button class="ss-close" style="background:none; border:none; font-size:16px; cursor:pointer;">×</button>
+    </div>
+    <div class="ss-body">
+      <p class="ss-why" style="font-size:12px; margin:0 0 8px 0;"><strong>Incident analysis:</strong><br>${detection.explanation}</p>
+      ${timelineHTML}
+      <div class="ss-confidence" style="font-size:11px; color:#666; margin-bottom:8px;">Confidence: <strong>${(detection.confidence*100).toFixed(0)}%</strong></div>
+      <div class="ss-section-label" style="font-size:11px; font-weight:bold; margin-top:4px;">💬 Reply Coach</div>
+      <div class="ss-replies" style="display:flex; flex-direction:column; gap:4px; margin-top:4px;">${replies}</div>
+      <div class="ss-actions" style="margin-top:8px;"><button class="ss-btn ss-btn--primary" data-action="save-evidence" style="width:100%; background:#e65100; color:#fff; border:none; padding:6px; border-radius:4px; cursor:pointer; font-weight:bold;">📥 Save Evidence</button></div>
+    </div>
+  `;
+
+  card.querySelector('.ss-close').addEventListener('click', (e) => {
+    e.stopPropagation();
+    card.style.display = 'none';
+  });
+  
+  card.querySelectorAll('.ss-reply').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      await navigator.clipboard.writeText(btn.dataset.text);
+      btn.textContent = '✓ Copied!';
+      setTimeout(() => btn.textContent = btn.dataset.text, 2000);
+    });
+  });
+  
+  card.querySelector('[data-action="save-evidence"]').addEventListener('click', (e) => {
+    e.stopPropagation();
+    exportEvidence(incidentRef);
+  });
+  
   return card;
 }
 
 async function exportEvidence(incident) {
-  const lines = ['SafeSignal — Incident Report', `Date: ${new Date().toLocaleString()}`, `Platform: ${incident.platform || 'Unknown'}`, `Category: ${incident.category}`, `Message: "${incident.text}"`, `Explanation: ${incident.explanation}`].join('\n');
+  const lines = [
+    'SafeSignal — Incident Report',
+    `Date: ${new Date().toLocaleString()}`,
+    `Platform: ${incident.platform || 'Unknown'}`,
+    `Category: ${incident.category}`,
+    `Sender: ${incident.sender || 'Unknown Sender'}`, // <-- Captured Sender dynamic metadata
+    `Message: "${incident.text}"`,
+    `Explanation: ${incident.explanation}`
+  ].join('\n');
+  
   const blob = new Blob([lines], { type: 'text/plain' });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = `safesignal-incident-${Date.now()}.txt`; a.click();
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `safesignal-incident-${Date.now()}.txt`;
+  a.click();
 }

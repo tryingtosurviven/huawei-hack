@@ -50,6 +50,7 @@ async function processNode(node) {
         escalationStages: detection.escalationStages,
         aiLayer: detection.aiLayer,
         platform: PLATFORM_NAME, // <--- This helps the Evidence Vault!
+        sender: extractSender(msgEl), // <-- Dynamically map sender text
         timestamp: new Date().toISOString(),
       };
 
@@ -62,10 +63,10 @@ async function processNode(node) {
 }
 
 function injectAlertCard(msgElement, detection, incident) {
-  // Deduplicate: only one card per bubble
-  if (msgElement.querySelector('.ss-alert')) return;
+  // Deduplicate: only one shield badge per bubble
+  if (msgElement.querySelector('.ss-badge-wrapper')) return;
   msgElement.style.position = 'relative';
-  msgElement.style.overflow = 'visible'; // let the card float above neighbours
+  msgElement.style.overflow = 'visible';
   const card = buildAlertCard(detection, incident, msgElement);
   msgElement.appendChild(card);
 }
@@ -75,6 +76,24 @@ const observer = new MutationObserver(mutations => {
     mut.addedNodes.forEach(node => processNode(node));
   }
 });
+
+// Add this sender extractor helper to your whatsapp_adapter.js file
+function extractSender(node) {
+  // Pull sender identity from parent container data strings
+  const container = node.closest('.msg');
+  if (container) {
+    const textObj = container.querySelector('.copyable-text');
+    if (textObj && textObj.hasAttribute('data-pre-plain-text')) {
+      const match = textObj.getAttribute('data-pre-plain-text').match(/\]\s*([^:]+):/);
+      if (match) return match[1].trim();
+    }
+  }
+  // Fallback check to look for group chat label classes
+  const groupSenderEl = node.querySelector('span[dir="auto"]');
+  if (groupSenderEl) return groupSenderEl.textContent.trim();
+  
+  return node.classList.contains('message-out') ? 'You' : 'Incoming Connection';
+};
 
 function initObserver() {
   observer.observe(document.body, { childList: true, subtree: true });

@@ -68,6 +68,7 @@ async function processNode(node) {
         escalationStages: detection.escalationStages,
         aiLayer: detection.aiLayer,
         platform: PLATFORM_NAME, // <--- This helps the Evidence Vault!
+        sender: extractSender(msgEl), // <-- Dynamically map sender text
         timestamp: new Date().toISOString(),
       };
 
@@ -80,7 +81,8 @@ async function processNode(node) {
 }
 
 function injectAlertCard(msgElement, detection, incident) {
-  if (msgElement.querySelector('.ss-alert')) return;
+  // Deduplicate: only one shield badge per bubble
+  if (msgElement.querySelector('.ss-badge-wrapper')) return;
   msgElement.style.position = 'relative';
   msgElement.style.overflow = 'visible';
   const card = buildAlertCard(detection, incident, msgElement);
@@ -92,6 +94,15 @@ const observer = new MutationObserver(mutations => {
     mut.addedNodes.forEach(node => processNode(node));
   }
 });
+
+function extractSender(node) {
+  const container = node.closest('.Message, .bubble');
+  if (container) {
+    const nameEl = container.querySelector('.peer-title, .name, .sender-name');
+    if (nameEl) return nameEl.innerText.trim();
+  }
+  return node.matches('.message-out') || node.querySelector('.is-out') ? 'You' : 'Incoming Connection';
+}
 
 function initObserver() {
   observer.observe(document.body, { childList: true, subtree: true });
